@@ -1,47 +1,58 @@
 import React, { useEffect, useMemo, useState } from "react";
 import styled, { css } from "styled-components";
 
-interface clickItem {}
-
 const App = () => {
-  const [bingoItem, setBingoItem] = useState<number[]>([]);
+  const animationDuration: number = 3;
+  const itemBase: number[] = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8], []);
+
+  //itemBase를 2배로 복사후 랜덤정렬
+  const randomItemBase: number[] = useMemo(
+    () => itemBase.concat(itemBase).sort(() => Math.random() - 0.5),
+    [itemBase]
+  );
 
   const [firstClick, setFirstClick] = useState<number[]>([]);
   const [secondClick, setSecondClick] = useState<number[]>([]);
-
-  const [clickPossible, setClickPossible] = useState<boolean>(false);
   const [clearItem, setClearItem] = useState<number[]>([]);
 
-  const [test, setTest] = useState<boolean>(false);
-
-  const itemBase: number[] = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8], []);
-  const animationDuration: number = 1;
+  const [clickPossible, setClickPossible] = useState<boolean>(false);
 
   useEffect(() => {
-    if (bingoItem.length === 0) {
-      const newItemBase = itemBase.concat(itemBase);
-      newItemBase.sort(() => Math.random() - 0.5);
-      setBingoItem(newItemBase);
+    //처음 로딩이 끝난후 일정시간 클릭 불가 처리
+    const delay: number =
+      (animationDuration + (randomItemBase.length - 1) / 4) * 1000;
+
+    const clickPossibleTimeOut = setTimeout(() => {
+      setClickPossible(true);
+    }, delay);
+
+    return () => clearTimeout(clickPossibleTimeOut);
+  }, [randomItemBase]);
+
+  useEffect(() => {
+    //두번째 클릭 이후에 실행
+    let clickDelay: number = 1000;
+
+    if (secondClick.length > 0) {
+      if (firstClick[1] === secondClick[1]) {
+        setClearItem((prev) => [...prev, secondClick[1]]);
+        clickDelay = 0;
+      }
+
+      setTimeout(() => {
+        setFirstClick([]);
+        setSecondClick([]);
+        setClickPossible(true);
+      }, clickDelay);
     }
-  }, [itemBase, bingoItem, setBingoItem]);
-
-  const onTestHandler = () => {
-    const delay: number = (animationDuration + itemBase.length - 1 / 2) * 1000;
-    setTimeout(() => {
-      setClickPossible(true);
-    }, 7500);
-  };
-
-  useEffect(() => {
-    const delay: number = (animationDuration + itemBase.length - 1 / 2) * 1000;
-    setTimeout(() => {
-      setClickPossible(true);
-      console.log(delay);
-    }, 7500);
-  }, [itemBase]);
+  }, [firstClick, secondClick]);
 
   const onClickItem = (index: number, data: number) => {
     if (!clickPossible) {
+      return;
+    }
+
+    if (clearItem.includes(data)) {
       return;
     }
 
@@ -64,48 +75,30 @@ const App = () => {
     }
   };
 
-  //두번째 클릭 이후에 실행
-  useEffect(() => {
-    if (secondClick.length > 0) {
-      if (firstClick[1] === secondClick[1]) {
-        setClearItem((prev) => [...prev, secondClick[1]]);
-      }
-
-      setTimeout(() => {
-        setFirstClick([]);
-        setSecondClick([]);
-        setClickPossible(true);
-      }, 1000);
-    }
-  }, [firstClick, secondClick]);
-
   return (
     <Body>
       <Div>
-        <RefreshBtn onClick={onTestHandler}>TEST</RefreshBtn>
-        {bingoItem &&
-          bingoItem.map((data, index) => (
-            <Item key={index} onClick={() => onClickItem(index, data)}>
-              <ItemDiv
-                firstclick={
-                  firstClick[0] === index && firstClick[1] === data
-                    ? true
-                    : false
-                }
-                secondclick={
-                  secondClick[0] === index && secondClick[1] === data
-                    ? true
-                    : false
-                }
-                clearcheck={clearItem.includes(data)}
-                animationduration={animationDuration}
-                delay={index / 2}
-              >
-                <Front>{index / 2}</Front>
-                <Back>{data}</Back>
-              </ItemDiv>
-            </Item>
-          ))}
+        <RefreshBtn>TEST</RefreshBtn>
+        {randomItemBase.map((data, index) => (
+          <Item key={index} onClick={() => onClickItem(index, data)}>
+            <ItemDiv
+              $firstClick={
+                firstClick[0] === index && firstClick[1] === data ? true : false
+              }
+              $secondClick={
+                secondClick[0] === index && secondClick[1] === data
+                  ? true
+                  : false
+              }
+              $clearCheck={clearItem.includes(data)}
+              animationduration={animationDuration}
+              delay={index / 4}
+            >
+              <Front></Front>
+              <Back>{data}</Back>
+            </ItemDiv>
+          </Item>
+        ))}
       </Div>
     </Body>
   );
@@ -179,9 +172,9 @@ const Back = styled(CardDiv)`
 `;
 
 const ItemDiv = styled.div<{
-  firstclick: boolean;
-  secondclick: boolean;
-  clearcheck: boolean;
+  $firstClick: boolean;
+  $secondClick: boolean;
+  $clearCheck: boolean;
   animationduration: number;
   delay: number;
 }>`
@@ -193,14 +186,23 @@ const ItemDiv = styled.div<{
   transform-style: preserve-3d;
 
   transform: ${(props) =>
-    props.firstclick || props.secondclick
+    props.$firstClick || props.$secondClick
       ? "rotateY(180deg)"
       : "rotateY(0deg)"};
-  transform: ${(props) => props.clearcheck && "rotateY(180deg)"};
+  transform: ${(props) => props.$clearCheck && "rotateY(180deg)"};
+
+  ${Back} {
+    background-color: ${(props) => props.$clearCheck && "#5cf05c"};
+  }
+
+  /* ${CardDiv} {
+    box-shadow: ${(props) =>
+    (props.$firstClick || props.$secondClick) && "0px 0px 10px 1px red"};
+  } */
 
   animation-duration: ${(props) => `${props.animationduration}s`};
   animation-name: slidein;
-  animation-delay: ${(props) => `${props.delay / 2}s`};
+  animation-delay: ${(props) => `${props.delay}s`};
 
   @keyframes slidein {
     0% {
@@ -214,15 +216,6 @@ const ItemDiv = styled.div<{
     100% {
       transform: rotateY(0deg);
     }
-  }
-
-  ${Back} {
-    background-color: ${(props) => props.clearcheck && "#5cf05c"};
-  }
-
-  ${CardDiv} {
-    box-shadow: ${(props) =>
-      (props.firstclick || props.secondclick) && "0px 0px 10px 1px red"};
   }
 
   &:hover {

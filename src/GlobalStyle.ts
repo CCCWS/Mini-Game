@@ -11,7 +11,6 @@ const GlobalStyle = createGlobalStyle`
 
 *{
     box-sizing: border-box;
-    overscroll-behavior: contain;    
     font-family : BMJUA;
     margin: 0;
 }
