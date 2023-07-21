@@ -11,11 +11,30 @@ const App = () => {
     [itemBase]
   );
 
+  const [test, setTest] = useState<number[]>([]);
+
   const [firstClick, setFirstClick] = useState<number[]>([]);
   const [secondClick, setSecondClick] = useState<number[]>([]);
   const [clearItem, setClearItem] = useState<number[]>([]);
 
   const [clickPossible, setClickPossible] = useState<boolean>(false);
+
+  const onClickReset = () => {
+    //itemBase를 2배로 복사후 랜덤정렬
+    const test: number[] = itemBase
+      .concat(itemBase)
+      .sort(() => Math.random() - 0.5);
+
+    setTest(test);
+    console.log(test);
+  };
+
+  useEffect(() => {
+    console.log(test);
+    if (test.length === 0) {
+      setTest(randomItemBase);
+    }
+  }, [test, randomItemBase]);
 
   useEffect(() => {
     //처음 로딩이 끝난후 일정시간 클릭 불가 처리
@@ -78,10 +97,11 @@ const App = () => {
   return (
     <Body>
       <Div>
-        <RefreshBtn>TEST</RefreshBtn>
-        {randomItemBase.map((data, index) => (
-          <Item key={index} onClick={() => onClickItem(index, data)}>
+        <RefreshBtn onClick={onClickReset}>TEST</RefreshBtn>
+        {test.map((data, index) => (
+          <Item key={data} onClick={() => onClickItem(index, data)}>
             <ItemDiv
+              test={test}
               $firstClick={
                 firstClick[0] === index && firstClick[1] === data ? true : false
               }
@@ -177,6 +197,7 @@ const ItemDiv = styled.div<{
   $clearCheck: boolean;
   animationduration: number;
   delay: number;
+  test: number[];
 }>`
   width: 100%;
   height: 100%;
@@ -200,11 +221,11 @@ const ItemDiv = styled.div<{
     (props.$firstClick || props.$secondClick) && "0px 0px 10px 1px red"};
   } */
 
+  animation-name: rotate;
   animation-duration: ${(props) => `${props.animationduration}s`};
-  animation-name: slidein;
   animation-delay: ${(props) => `${props.delay}s`};
 
-  @keyframes slidein {
+  @keyframes rotate {
     0% {
       transform: rotateY(0deg);
     }
