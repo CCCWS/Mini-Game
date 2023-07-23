@@ -6,12 +6,18 @@ const App = () => {
   const itemBase: number[] = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8], []);
 
   //itemBase를 2배로 복사후 랜덤정렬
-  const randomItemBase: number[] = useMemo(
+  const randomItem: number[] = useMemo(
     () => itemBase.concat(itemBase).sort(() => Math.random() - 0.5),
     [itemBase]
   );
 
-  const [test, setTest] = useState<number[]>([]);
+  //randomItem 길이 만큼의 랜덤한 수의 숫자를 가진 배열 생성
+  const randomIndex = Array.from({ length: randomItem.length }, () =>
+    Math.floor(Math.random() * 1000000000)
+  );
+
+  const [itemArr, setItemArr] = useState<number[]>(randomItem);
+  const [itemIndex, setItemIndex] = useState<number[]>(randomIndex);
 
   const [firstClick, setFirstClick] = useState<number[]>([]);
   const [secondClick, setSecondClick] = useState<number[]>([]);
@@ -20,33 +26,32 @@ const App = () => {
   const [clickPossible, setClickPossible] = useState<boolean>(false);
 
   const onClickReset = () => {
-    //itemBase를 2배로 복사후 랜덤정렬
-    const test: number[] = itemBase
+    const resetItem: number[] = itemBase
       .concat(itemBase)
       .sort(() => Math.random() - 0.5);
 
-    setTest(test);
-    console.log(test);
-  };
+    const resetIndex = Array.from({ length: randomItem.length }, () =>
+      Math.floor(Math.random() * 1000000000)
+    );
 
-  useEffect(() => {
-    console.log(test);
-    if (test.length === 0) {
-      setTest(randomItemBase);
-    }
-  }, [test, randomItemBase]);
+    setItemArr(resetItem);
+    setItemIndex(resetIndex);
+    firstClick.length > 0 && setFirstClick([]);
+    clearItem.length > 0 && setClearItem([]);
+    setClickPossible(false);
+  };
 
   useEffect(() => {
     //처음 로딩이 끝난후 일정시간 클릭 불가 처리
     const delay: number =
-      (animationDuration + (randomItemBase.length - 1) / 4) * 1000;
+      (animationDuration + (randomItem.length - 1) / 4) * 1000;
 
     const clickPossibleTimeOut = setTimeout(() => {
       setClickPossible(true);
     }, delay);
 
     return () => clearTimeout(clickPossibleTimeOut);
-  }, [randomItemBase]);
+  }, [clickPossible, randomItem]);
 
   useEffect(() => {
     //두번째 클릭 이후에 실행
@@ -58,11 +63,13 @@ const App = () => {
         clickDelay = 0;
       }
 
-      setTimeout(() => {
+      const clickInit = setTimeout(() => {
         setFirstClick([]);
         setSecondClick([]);
         setClickPossible(true);
       }, clickDelay);
+
+      return () => clearTimeout(clickInit);
     }
   }, [firstClick, secondClick]);
 
@@ -94,14 +101,17 @@ const App = () => {
     }
   };
 
+  useEffect(() => {
+    console.log(clickPossible);
+  }, [clickPossible]);
+
   return (
     <Body>
       <Div>
-        <RefreshBtn onClick={onClickReset}>TEST</RefreshBtn>
-        {test.map((data, index) => (
-          <Item key={data} onClick={() => onClickItem(index, data)}>
+        <ResetBtn onClick={onClickReset}>RESET</ResetBtn>
+        {itemArr.map((data, index) => (
+          <Item key={itemIndex[index]} onClick={() => onClickItem(index, data)}>
             <ItemDiv
-              test={test}
               $firstClick={
                 firstClick[0] === index && firstClick[1] === data ? true : false
               }
@@ -114,11 +124,15 @@ const App = () => {
               animationduration={animationDuration}
               delay={index / 4}
             >
-              <Front></Front>
+              <Front>?</Front>
               <Back>{data}</Back>
             </ItemDiv>
           </Item>
         ))}
+
+        <ClearNotification clearCheck={clearItem.length === itemBase.length}>
+          CLEAR !!!
+        </ClearNotification>
       </Div>
     </Body>
   );
@@ -145,7 +159,7 @@ const Div = styled.div`
   position: relative;
 `;
 
-const RefreshBtn = styled.button`
+const ResetBtn = styled.button`
   position: absolute;
   width: 50px;
   height: 50px;
@@ -153,6 +167,19 @@ const RefreshBtn = styled.button`
   top: -50px;
   left: 50%;
   transform: translate(-50%, -50%);
+
+  border: 2px solid transparent;
+  border-radius: 10px;
+
+  width: 100px;
+  height: 40px;
+
+  transition: 0.5s;
+
+  &:hover {
+    cursor: pointer;
+    border: 2px solid red;
+  }
 `;
 
 const Item = styled.div`
@@ -173,11 +200,19 @@ const CardDiv = styled.div`
 const Front = styled(CardDiv)`
   transform: rotateY(0deg);
   background-color: #bdbdbd;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 1.5rem;
+
+  color: gray;
 `;
 
 const Back = styled(CardDiv)`
   transform: rotateY(-180deg);
-  background-color: white;
+  /* background-color: white; */
 
   display: flex;
   justify-content: center;
@@ -197,7 +232,6 @@ const ItemDiv = styled.div<{
   $clearCheck: boolean;
   animationduration: number;
   delay: number;
-  test: number[];
 }>`
   width: 100%;
   height: 100%;
@@ -213,13 +247,8 @@ const ItemDiv = styled.div<{
   transform: ${(props) => props.$clearCheck && "rotateY(180deg)"};
 
   ${Back} {
-    background-color: ${(props) => props.$clearCheck && "#5cf05c"};
+    background-color: ${(props) => (props.$clearCheck ? "#5cf05c" : "white")};
   }
-
-  /* ${CardDiv} {
-    box-shadow: ${(props) =>
-    (props.$firstClick || props.$secondClick) && "0px 0px 10px 1px red"};
-  } */
 
   animation-name: rotate;
   animation-duration: ${(props) => `${props.animationduration}s`};
@@ -242,6 +271,31 @@ const ItemDiv = styled.div<{
   &:hover {
     cursor: pointer;
   }
+`;
+
+const ClearNotification = styled.div<{ clearCheck: boolean }>`
+  position: absolute;
+  width: 100%;
+  height: 0%;
+  background-color: #747474d5;
+  color: white;
+
+  opacity: 0;
+  border-radius: 10px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 1.5rem;
+
+  ${(props) =>
+    props.clearCheck &&
+    css`
+      transition: opacity 1s;
+      opacity: 1;
+      height: 100%;
+    `}
 `;
 
 export default App;
