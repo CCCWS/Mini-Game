@@ -101,10 +101,6 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    console.log(clickPossible);
-  }, [clickPossible]);
-
   return (
     <Body>
       <Div>
@@ -112,14 +108,8 @@ const App = () => {
         {itemArr.map((data, index) => (
           <Item key={itemIndex[index]} onClick={() => onClickItem(index, data)}>
             <ItemDiv
-              $firstClick={
-                firstClick[0] === index && firstClick[1] === data ? true : false
-              }
-              $secondClick={
-                secondClick[0] === index && secondClick[1] === data
-                  ? true
-                  : false
-              }
+              $firstClick={firstClick[0] === index && firstClick[1] === data}
+              $secondClick={secondClick[0] === index && secondClick[1] === data}
               $clearCheck={clearItem.includes(data)}
               animationduration={animationDuration}
               delay={index / 4}
@@ -292,7 +282,7 @@ const ClearNotification = styled.div<{ clearCheck: boolean }>`
   ${(props) =>
     props.clearCheck &&
     css`
-      transition: opacity 1s;
+      transition: opacity 0.5s;
       opacity: 1;
       height: 100%;
     `}
