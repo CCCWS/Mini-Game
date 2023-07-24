@@ -25,22 +25,6 @@ const App = () => {
 
   const [clickPossible, setClickPossible] = useState<boolean>(false);
 
-  const onClickReset = () => {
-    const resetItem: number[] = itemBase
-      .concat(itemBase)
-      .sort(() => Math.random() - 0.5);
-
-    const resetIndex = Array.from({ length: randomItem.length }, () =>
-      Math.floor(Math.random() * 1000000000)
-    );
-
-    setItemArr(resetItem);
-    setItemIndex(resetIndex);
-    firstClick.length > 0 && setFirstClick([]);
-    clearItem.length > 0 && setClearItem([]);
-    setClickPossible(false);
-  };
-
   useEffect(() => {
     //처음 로딩이 끝난후 일정시간 클릭 불가 처리
     const delay: number =
@@ -51,7 +35,7 @@ const App = () => {
     }, delay);
 
     return () => clearTimeout(clickPossibleTimeOut);
-  }, [clickPossible, randomItem]);
+  }, [randomItem]);
 
   useEffect(() => {
     //두번째 클릭 이후에 실행
@@ -73,6 +57,22 @@ const App = () => {
     }
   }, [firstClick, secondClick]);
 
+  const onClickReset = () => {
+    const resetItem: number[] = itemBase
+      .concat(itemBase)
+      .sort(() => Math.random() - 0.5);
+
+    const resetIndex: number[] = Array.from({ length: randomItem.length }, () =>
+      Math.floor(Math.random() * 1000000000)
+    );
+
+    setItemArr(resetItem);
+    setItemIndex(resetIndex);
+    firstClick.length > 0 && setFirstClick([]);
+    clearItem.length > 0 && setClearItem([]);
+    setClickPossible(false);
+  };
+
   const onClickItem = (index: number, data: number) => {
     if (!clickPossible) {
       return;
@@ -82,14 +82,14 @@ const App = () => {
       return;
     }
 
-    if (firstClick.length === 0) {
-      console.log("처음클릭");
-      setFirstClick([index, data]);
+    if (firstClick[0] === index && firstClick[1] === data) {
+      console.log("중복클릭");
       return;
     }
 
-    if (firstClick[0] === index && firstClick[1] === data) {
-      console.log("중복클릭");
+    if (firstClick.length === 0) {
+      console.log("처음클릭");
+      setFirstClick([index, data]);
       return;
     }
 
@@ -120,7 +120,7 @@ const App = () => {
           </Item>
         ))}
 
-        <ClearNotification clearCheck={clearItem.length === itemBase.length}>
+        <ClearNotification $clearCheck={clearItem.length === itemBase.length}>
           CLEAR !!!
         </ClearNotification>
       </Div>
@@ -154,7 +154,7 @@ const ResetBtn = styled.button`
   width: 50px;
   height: 50px;
 
-  top: -50px;
+  top: -30px;
   left: 50%;
   transform: translate(-50%, -50%);
 
@@ -263,7 +263,7 @@ const ItemDiv = styled.div<{
   }
 `;
 
-const ClearNotification = styled.div<{ clearCheck: boolean }>`
+const ClearNotification = styled.div<{ $clearCheck: boolean }>`
   position: absolute;
   width: 100%;
   height: 0%;
@@ -280,7 +280,7 @@ const ClearNotification = styled.div<{ clearCheck: boolean }>`
   font-size: 1.5rem;
 
   ${(props) =>
-    props.clearCheck &&
+    props.$clearCheck &&
     css`
       transition: opacity 0.5s;
       opacity: 1;
